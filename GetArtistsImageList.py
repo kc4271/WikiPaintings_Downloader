@@ -77,7 +77,7 @@ class Artists(threading.Thread):
 			f.close()
 		except:
 			mutex_artist.acquire()
-			logfile.write(u"Parse Error:%s" % suffix)
+			logfile.write(u"Parse Error:%s\n" % suffix)
 			mutex_artist.release()
 
 		

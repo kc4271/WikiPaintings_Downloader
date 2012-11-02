@@ -51,7 +51,7 @@ class Downloader(threading.Thread):
 						mutex.release()
 				except:
 					mutex.acquire()
-					logfile.write(u'Download Failed at %s %d' % (self._dirname, self._count + 1))
+					logfile.write(u'Download Failed at %s %d\n' % (self._dirname, self._count + 1))
 					logfile.flush()
 					os.fsync(logfile.fileno())
 					mutex.release()
