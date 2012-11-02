@@ -60,7 +60,7 @@ class Downloader(threading.Thread):
 
 def Download(url_path):
 	global url_lists
-	global conut
+	global count
 	f = open(url_path)
 	url_lists = []
 	count = 0
