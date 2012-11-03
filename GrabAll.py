@@ -39,29 +39,31 @@ class Downloader(threading.Thread):
 			mutex.release()
 	
 			if self._url:
-				try:
-					filename = self._url[self._url.rfind('/'):]
-					self._path = (self._dirname + filename)
+				filename = self._url[self._url.rfind('/'):]
+				self._path = (self._dirname + filename)
+				
+				exists = os.path.exists(self._path)
+				
+				if not exists:
 					mutex.acquire()
-					exists = os.path.exists(self._path)
+					print "Downloading %s %d" % (self._dirname, self._count + 1)
 					mutex.release()
-					if not exists:
-						mutex.acquire()
-						print "Downloading %s %d" % (self._dirname, self._count + 1)
-						mutex.release()
+					try:
 						urllib.urlretrieve(self._url,self._path)
+					except:
 						mutex.acquire()
-						curtime = int(time.time())
-						print 'Finisth %s %d, %ds' % (self._dirname, self._count + 1, curtime - self._time_count[0])
+						logfile.write('Exception: ')
+						logfile.write(self._url)
+						logfile.write('\n')
+						logfile.flush()
+						os.fsync(logfile.fileno())
 						mutex.release()
-				except:
 					mutex.acquire()
-					logfile.write('Exception: ')
-					logfile.write(self._url)
-					logfile.write('\n')
-					logfile.flush()
-					os.fsync(logfile.fileno())
+					curtime = int(time.time())
+					print 'Finisth %s %d, %ds' % (self._dirname, self._count + 1, curtime - self._time_count[0])
 					mutex.release()
+				
+					
 			else:
 				break
 
@@ -90,6 +92,7 @@ class DownloadManager(threading.Thread):
 					logfile.write(worker._url)
 					logfile.write('\n')
 					logfile.flush()
+					os.fsync(logfile.fileno())
 					timeout = True
 				mutex.release()
 
@@ -98,12 +101,13 @@ class DownloadManager(threading.Thread):
 			else:
 				break
 
-
-
-
 def Download(url_path):
 	global url_lists
 	global count
+	global mutex
+
+	mutex = threading.Lock()
+
 	f = open(url_path)
 	url_lists = []
 	count = 0
@@ -122,15 +126,11 @@ def Download(url_path):
 	for i in range(threadsnum):
 		threads[i].join()
 
-	
-
-
 if __name__ == '__main__':
-	global mutex
 	global count
 	global url_lists	
 	global logfile
-	mutex = threading.Lock()
+	
 	url_lists = []
 	count = 0
 
