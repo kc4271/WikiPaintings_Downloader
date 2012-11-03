@@ -8,7 +8,7 @@ import pdb
 import sys
 
 class Downloader(threading.Thread):
-	def __init__(self, url_file):
+	def __init__(self, url_file, time_count):
 		threading.Thread.__init__(self)
 		artist = os.path.basename(url_file)[:-4]
 		dirname = 'Images/%s' % artist
@@ -18,18 +18,22 @@ class Downloader(threading.Thread):
 			os.makedirs(dirname)
 		mutex.release()
 		self._dirname = dirname
+		self._time_count = time_count
 
 	def run(self):
 		global mutex
 		global logfile
 		global count
-
+		
+		self._time_count[0] = int(time.time())
 		while True:
 			mutex.acquire()
+			
 			if count < len(url_lists):
 				self._url = url_lists[count]
 				self._count = count
 				count += 1
+				self._time_count[0] = int(time.time())
 			else:
 				self._url = ''
 			mutex.release()
@@ -47,16 +51,55 @@ class Downloader(threading.Thread):
 						mutex.release()
 						urllib.urlretrieve(self._url,self._path)
 						mutex.acquire()
-						print 'Finisth %s %d' % (self._dirname, self._count + 1)
+						curtime = int(time.time())
+						print 'Finisth %s %d, %ds' % (self._dirname, self._count + 1, curtime - self._time_count[0])
 						mutex.release()
 				except:
 					mutex.acquire()
-					logfile.write(u'Download Failed at %s %d\n' % (self._dirname, self._count + 1))
+					logfile.write('Exception: ')
+					logfile.write(self._url)
+					logfile.write('\n')
 					logfile.flush()
 					os.fsync(logfile.fileno())
 					mutex.release()
 			else:
 				break
+
+class DownloadManager(threading.Thread):
+	def __init__(self, url_file):
+		threading.Thread.__init__(self)
+		self._url_file = url_file
+		self._time_count = [0]
+
+	def run(self):
+		global mutex
+
+		worker = Downloader(self._url_file, self._time_count)
+		worker.daemon = True
+		worker.start()
+
+		while True:
+			worker.join(60)
+			if worker.isAlive():
+				timeout = False
+				curtime = int(time.time())
+				mutex.acquire()
+				runtime = self._time_count[0]
+				if runtime - curtime > 15 * 60:
+					logfile.write('Timeout: ')
+					logfile.write(worker._url)
+					logfile.write('\n')
+					logfile.flush()
+					timeout = True
+				mutex.release()
+
+				if timeout:
+					break
+			else:
+				break
+
+
+
 
 def Download(url_path):
 	global url_lists
@@ -69,16 +112,17 @@ def Download(url_path):
 		if not l:
 			continue
 		url_lists.append(l)
-
+	f.close()
+	
 	threadsnum = 100
-	threads = [Downloader(url_path) for i in range(threadsnum)]
+	threads = [DownloadManager(url_path) for i in range(threadsnum)]
 	for i in range(threadsnum):
 		threads[i].start()
 
 	for i in range(threadsnum):
 		threads[i].join()
 
-	f.close()
+	
 
 
 if __name__ == '__main__':
@@ -91,7 +135,9 @@ if __name__ == '__main__':
 	count = 0
 
 	logfile = open('log_downloader2.txt','w')
+	logfile.write('Failed:\n')
 	f = open('artists.txt')
+
 	for l in f:
 		if not l:
 			continue
