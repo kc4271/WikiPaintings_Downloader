@@ -87,7 +87,7 @@ class DownloadManager(threading.Thread):
 				curtime = int(time.time())
 				mutex.acquire()
 				runtime = self._time_count[0]
-				if runtime - curtime > 15 * 60:
+				if runtime - curtime > 30 * 60:
 					logfile.write('Timeout: ')
 					logfile.write(worker._url)
 					logfile.write('\n')
@@ -123,8 +123,14 @@ def Download(url_path):
 	for i in range(threadsnum):
 		threads[i].start()
 
-	for i in range(threadsnum):
-		threads[i].join()
+	while True:
+		alive = False
+		for i in range(threadsnum):
+			if threads[i].isAlive():
+				alive = True
+				time.sleep(0.2)
+		if not alive:
+			break
 
 if __name__ == '__main__':
 	global count
