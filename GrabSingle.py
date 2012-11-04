@@ -81,13 +81,13 @@ class DownloadManager(threading.Thread):
 		worker.start()
 
 		while True:
-			worker.join(60)
+			worker.join(20)
 			if worker.isAlive():
 				timeout = False
 				curtime = int(time.time())
 				mutex.acquire()
 				runtime = self._time_count[0]
-				if runtime - curtime > 30 * 60:
+				if curtime - runtime > 20 * 60:
 					logfile.write('Timeout: ')
 					logfile.write(worker._url)
 					logfile.write('\n')
