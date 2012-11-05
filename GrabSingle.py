@@ -87,6 +87,8 @@ class DownloadManager(threading.Thread):
 				curtime = int(time.time())
 				mutex.acquire()
 				runtime = self._time_count[0]
+				if curtime - runtime > 3 * 60:
+					print '[Warning!!!] %s maybe timeout, it will be killed after 17 minutes' % (worker._path.encode('ascii','replace'))
 				if curtime - runtime > 20 * 60:
 					logfile.write('Timeout: ')
 					logfile.write(worker._url)
@@ -140,7 +142,7 @@ if __name__ == '__main__':
 	url_lists = []
 	count = 0
 
-	logfile = open('log_downloader.txt','w')
+	logfile = open('log_Single.txt','a')
 
 	while True:
 		path = raw_input("Input the artist list(for example: vittore-carpaccio.lst)\n")

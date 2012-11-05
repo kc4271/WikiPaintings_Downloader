@@ -40,7 +40,7 @@ class Downloader(threading.Thread):
 	
 			if self._url:
 				filename = self._url[self._url.rfind('/'):]
-				self._path = (self._dirname + filename)
+				self._path = (self._dirname + filename).decode('UTF-8')
 				
 				exists = os.path.exists(self._path)
 				
@@ -62,8 +62,6 @@ class Downloader(threading.Thread):
 					curtime = int(time.time())
 					print 'Finisth %s %d, %ds' % (self._dirname, self._count + 1, curtime - self._time_count[0])
 					mutex.release()
-				
-					
 			else:
 				break
 
@@ -87,6 +85,8 @@ class DownloadManager(threading.Thread):
 				curtime = int(time.time())
 				mutex.acquire()
 				runtime = self._time_count[0]
+				if curtime - runtime > 3 * 60:
+					print '[Warning!!!] %s maybe timeout, it will be killed after 17 minutes' % (worker._path.encode('ascii','replace'))
 				if curtime - runtime > 20 * 60:
 					logfile.write('Timeout: ')
 					logfile.write(worker._url)
@@ -140,7 +140,7 @@ if __name__ == '__main__':
 	url_lists = []
 	count = 0
 
-	logfile = open('log_downloader2.txt','w')
+	logfile = open('log_All.txt','a')
 	logfile.write('Failed:\n')
 	f = open('artists.txt')
 
