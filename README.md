@@ -1,5 +1,5 @@
 Wikipaintings_Downloader
-========================
+================
 
 some scripts used to download images in www.wikipaintings.org
 1. run GetArtists.py
