@@ -6,6 +6,13 @@ import threading
 import time
 import pdb
 import sys
+import signal
+import sys
+
+global stop
+global threadsnum
+
+threadsnum = 100
 
 class Downloader(threading.Thread):
 	def __init__(self, url_file, time_count):
@@ -24,9 +31,12 @@ class Downloader(threading.Thread):
 		global mutex
 		global logfile
 		global count
-		
+		global stop
 		self._time_count[0] = int(time.time())
 		while True:
+			if stop:
+				break
+
 			mutex.acquire()
 			
 			if count < len(url_lists):
@@ -63,7 +73,6 @@ class Downloader(threading.Thread):
 					print 'Finisth %s %d, %ds' % (self._dirname, self._count + 1, curtime - self._time_count[0])
 					mutex.release()
 				
-					
 			else:
 				break
 
@@ -107,6 +116,8 @@ def Download(url_path):
 	global url_lists
 	global count
 	global mutex
+	global threadsnum
+	global threads
 
 	mutex = threading.Lock()
 
@@ -120,7 +131,6 @@ def Download(url_path):
 		url_lists.append(l)
 	f.close()
 	
-	threadsnum = 100
 	threads = [DownloadManager(url_path) for i in range(threadsnum)]
 	for i in range(threadsnum):
 		threads[i].start()
@@ -133,12 +143,32 @@ def Download(url_path):
 				time.sleep(0.2)
 		if not alive:
 			break
+
+def signal_handler(signal, frame):
+    print('You pressed Ctrl+C!')
+    global stop
+    global threads
+    stop = True
+
+    while True:
+		alive = False
+		for i in range(threadsnum):
+			if threads[i].isAlive():
+				alive = True
+				time.sleep(0.2)
+		if not alive:
+			break
+
+    sys.exit(0)
+
 		
 if __name__ == '__main__':
 	global count
 	global url_lists	
 	global logfile
-	
+	global stop
+	stop = False
+	signal.signal(signal.SIGINT, signal_handler)
 	url_lists = []
 	count = 0
 
